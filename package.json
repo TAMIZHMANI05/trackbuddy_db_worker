@@ -1,5 +1,5 @@
 {
-  "name": "trackbuddy-backend",
+  "name": "trackbuddy-db-worker",
   "version": "1.0.0",
   "description": "",
   "main": "src/server.js",
