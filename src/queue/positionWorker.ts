@@ -5,7 +5,7 @@ import { batchInsertPositions, updateDeviceStatus } from '../db/queries';
 import config from '../configs/config';
 import logger from '../utils/logger';
 
-let worker: Worker | null = null;
+let positionWorker: Worker | null = null;
 let batchBuffer: ParsedPosition[] = [];
 let flushTimer: NodeJS.Timeout | null = null;
 
@@ -65,14 +65,14 @@ function scheduleFlush(): void {
  * Start the queue worker.
  * Batches positions and flushes when BATCH_SIZE is reached or after FLUSH_INTERVAL_MS.
  */
-export function startWorker(): void {
-    if (worker) {
+export function startPositionWorker(): void {
+    if (positionWorker) {
         logger.warn('WORKER_ALREADY_RUNNING');
         return;
     }
 
-    worker = new Worker<ParsedPosition>(
-        config.QUEUE_NAME,
+    positionWorker = new Worker<ParsedPosition>(
+        config.POSITION_QUEUE_NAME,
         async (job: Job<ParsedPosition>) => {
             // Add to batch buffer
             batchBuffer.push(job.data);
@@ -95,34 +95,34 @@ export function startWorker(): void {
         }
     );
 
-    worker.on('ready', () => {
-        logger.info('WORKER_READY', {
-            meta: { batchSize: config.BATCH_SIZE, flushInterval: config.FLUSH_INTERVAL_MS }
+    positionWorker.on('ready', () => {
+        logger.info('POSITION_WORKER_READY', {
+            meta: { queue: config.POSITION_QUEUE_NAME, batchSize: config.BATCH_SIZE, flushInterval: config.FLUSH_INTERVAL_MS }
         });
     });
 
-    worker.on('failed', (job, err: Error) => {
+    positionWorker.on('failed', (job, err: Error) => {
         const deviceId = job?.data ? (job.data as ParsedPosition).deviceId : undefined;
-        logger.error('WORKER_JOB_FAILED', {
+        logger.error('POSITION_WORKER_JOB_FAILED', {
             meta: { jobId: job?.id, deviceId, error: err }
         });
     });
 
-    worker.on('error', (err) => {
-        logger.error('WORKER_ERROR', { meta: err });
+    positionWorker.on('error', (err) => {
+        logger.error('POSITION_WORKER_ERROR', { meta: err });
     });
 }
 
 /**
  * Stop the worker and flush any remaining positions.
  */
-export async function stopWorker(): Promise<void> {
-    if (!worker) return;
+export async function stopPositionWorker(): Promise<void> {
+    if (!positionWorker) return;
 
     // Flush any remaining positions
     await flushBatch();
 
-    await worker.close();
-    worker = null;
-    logger.info('WORKER_STOPPED');
+    await positionWorker.close();
+    positionWorker = null;
+    logger.info('POSITION_WORKER_STOPPED');
 }

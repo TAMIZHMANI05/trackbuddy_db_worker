@@ -1,5 +1,11 @@
 export type DeviceStatus = 'MOVING' | 'IDLE' | 'PARKING' | 'INACTIVE';
 
+export interface HeartbeatPayload {
+    deviceId: string;
+    imei: string;
+    receivedAt: string | Date;
+}
+
 export interface ParsedPosition {
     deviceId: string;
     recordedAt: Date;
