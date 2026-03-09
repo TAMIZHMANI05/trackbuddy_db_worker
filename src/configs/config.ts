@@ -12,7 +12,8 @@ const config = {
     FLUSH_INTERVAL_MS: parseInt(process.env.FLUSH_INTERVAL_MS || '2000', 10),
     HEALTH_PORT: parseInt(process.env.HEALTH_PORT || '8081', 10),
     LOG_LEVEL: process.env.LOG_LEVEL || 'info',
-    QUEUE_NAME: process.env.QUEUE_NAME || 'positions'
+    POSITION_QUEUE_NAME: process.env.POSITION_QUEUE_NAME || 'positions',
+    HEARTBEAT_QUEUE_NAME: process.env.HEARTBEAT_QUEUE_NAME || 'heartbeats'
 } as const;
 
 export default config;

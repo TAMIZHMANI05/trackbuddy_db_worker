@@ -83,3 +83,16 @@ export async function updateDeviceStatus(deviceId: string, status: DeviceStatus)
         throw err;
     }
 }
+
+/**
+ * Update device's last_update timestamp from a heartbeat.
+ */
+export async function updateDeviceLastUpdate(deviceId: string, receivedAt: Date | string): Promise<void> {
+    try {
+        await pool.query('UPDATE devices SET last_update = $1 WHERE id = $2', [receivedAt, deviceId]);
+        logger.info('HEARTBEAT_PROCESSED', { meta: { deviceId, receivedAt } });
+    } catch (err) {
+        logger.error('DB_UPDATE_HEARTBEAT_ERROR', { meta: { deviceId, receivedAt, error: err } });
+        throw err;
+    }
+}

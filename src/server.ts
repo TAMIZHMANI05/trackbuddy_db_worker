@@ -1,7 +1,8 @@
 import logger from './utils/logger';
 import config from './configs/config';
 import { initDatabase, closeDatabase } from './db/pool';
-import { startWorker, stopWorker } from './queue/worker';
+import { startPositionWorker, stopPositionWorker } from './queue/positionWorker';
+import { startHeartbeatWorker, stopHeartbeatWorker } from './queue/heartbeatWorker';
 import http from 'http';
 
 let isShuttingDown = false;
@@ -14,8 +15,9 @@ async function main(): Promise<void> {
     // 1. Connect to database
     await initDatabase();
 
-    // 2. Start queue worker (consumer)
-    startWorker();
+    // 2. Start queue workers (consumers)
+    startPositionWorker();
+    startHeartbeatWorker();
 
     // 3. Health check HTTP server
     const healthServer = http.createServer((_req, res) => {
@@ -39,9 +41,15 @@ async function main(): Promise<void> {
         healthServer.close();
 
         try {
-            await stopWorker();
+            await stopPositionWorker();
         } catch (err) {
-            logger.error('SHUTDOWN_WORKER_ERROR', { meta: err });
+            logger.error('SHUTDOWN_POSITION_WORKER_ERROR', { meta: err });
+        }
+
+        try {
+            await stopHeartbeatWorker();
+        } catch (err) {
+            logger.error('SHUTDOWN_HEARTBEAT_WORKER_ERROR', { meta: err });
         }
 
         try {
